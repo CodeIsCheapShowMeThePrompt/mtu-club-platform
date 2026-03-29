@@ -170,8 +170,8 @@ export default function ClubHubDemo() {
     return record ? record.status : null;
   };
 
-  // 2. 计算是否有未读消息
-  const hasUnread = history.some(h => !h.read);
+  // 2. 计算是否有未读消息 (修改：只有非"已寄出"状态才触发红点)
+  const hasUnread = history.some(h => !h.read && h.status !== "已寄出");
 
   // 恢复 Tag 联动逻辑
   useEffect(() => {
@@ -236,13 +236,13 @@ export default function ClubHubDemo() {
       const resultTypes = ["success", "pending", "fail"];
       const randomResult = resultTypes[Math.floor(Math.random() * 3)];
       
-      // 新增记录时，默认 read: false
+      // 新增记录时，"已寄出"状态默认 read: true (不触发红点)
       const newRecord = { 
         club: selectedClub, 
         status: "已寄出", 
         result: randomResult, 
         msg: commitMsg, 
-        read: false 
+        read: true 
       };
       
       setHistory([...history, newRecord]);
@@ -256,7 +256,7 @@ export default function ClubHubDemo() {
         setTimeout(() => {
           let statusText = randomResult === "success" ? "已录取" : randomResult === "pending" ? "待面谈" : "遗憾落选";
           
-          // 更新状态，保持 read: false (因为是新消息)
+          // 更新状态，此时标记为 read: false (触发红点)
           setHistory(prev => prev.map(h => h.club.id === selectedClub.id ? { ...h, status: statusText, read: false } : h));
           
           // Toast 现在携带 clubId 信息，方便点击时定位
@@ -268,16 +268,15 @@ export default function ClubHubDemo() {
     }
   };
 
-  // 3. 点击 Toast 处理函数
+  // 3. 点击 Toast 处理函数 (修改：只打开抽屉，不标记已读)
   const handleToastClick = () => {
     if (feedbackToast) {
       setFeedbackToast(null);
       setDrawerOpen(true);
-      // (可选增强) 这里可以通过 state 记录要高亮的 ID，在抽屉里做一个闪烁效果
     }
   };
 
-  // 4. 打开抽屉时标记所有为已读
+  // 4. 打开抽屉时标记所有为已读 (保留，真正打开抽屉时才标记)
   const handleDrawerOpen = () => {
     setDrawerOpen(true);
     // 标记所有为已读
@@ -286,29 +285,38 @@ export default function ClubHubDemo() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] text-[#1D1D1F] selection:bg-purple-100 font-sans relative overflow-x-hidden">
-      
       {/* 步骤 0 & 1: 登录与动画 */}
       <AnimatePresence>
         {step < 2 && (
-          <motion.div exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white">
+          <motion.div exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white overflow-hidden">
             {step === 0 ? (
               <motion.div 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center w-full max-w-md px-8"
+                className="flex flex-col items-center w-full max-w-md px-8 relative z-10"
               >
-                {/* 背景装饰： subtle gradient */}
+                {/* 🔥 修复图层：全屏滚动大字（必显示） */}
+                <div className="fixed inset-0 -z-1 flex flex-col justify-center gap-0 overflow-hidden pointer-events-none">
+                  {/* 美团黄 - 左向右滚动 */}
+                  <div className="whitespace-nowrap w-full overflow-hidden">
+                    <div className="text-[42vw] font-black text-[#FFC107]/90 animate-scroll inline-block !leading-none">
+                      MEITUAN UNIVERSITY MEITUAN UNIVERSITY MEITUAN UNIVERSITY
+                    </div>
+                  </div>
+                  {/* 紫色 - 右向左滚动 */}
+                  <div className="whitespace-nowrap w-full overflow-hidden">
+                    <div className="text-[28vw] font-black text-[#9F13CE]/30 animate-scroll-reverse inline-block !leading-none">
+                      STUDENT CLUB ASSOCIATION STUDENT CLUB ASSOCIATION STUDENT CLUB ASSOCIATION
+                    </div>
+                  </div>
+                </div>
+
+                {/* 渐变背景 */}
                 <div className="fixed inset-0 -z-10 bg-gradient-to-br from-[#FDFCFB] via-[#F5F3EF] to-[#FDFCFB]" />
                 
-                {/* 内容卡片 */}
+                {/* 登录卡片 */}
                 <div className="w-full bg-white/60 backdrop-blur-xl border border-white/50 rounded-[32px] p-10 shadow-2xl flex flex-col items-center">
-                  
-                  {/* 顶部小 Logo */}
-                  <div className="w-12 h-12 mb-8 rounded-2xl bg-[#FFC107] text-black text-black flex items-center justify-center text-lg font-black shadow-lg tracking-tighter">
+                  <div className="w-12 h-12 mb-8 rounded-2xl bg-[#FFC107] text-black flex items-center justify-center text-lg font-black shadow-lg tracking-tighter">
                     MTU
                   </div>
-
-                  {/* 标题区 */}
                   <div className="text-center mb-10 space-y-3">
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
                       美团大学社团<br/>智能匹配平台
@@ -317,24 +325,17 @@ export default function ClubHubDemo() {
                       找到属于你的频率
                     </p>
                   </div>
-
-                  {/* 登录按钮 */}
                   <button 
                     onClick={handleLogin} 
-                    className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-xl hover:shadow-2xl active:scale-[0.98]"
+                    className="w-full py-4 bg-black text-white rounded-xl font-bold text-m hover:bg-zinc-800 transition-all shadow-xl hover:shadow-2xl active:scale-[0.98]"
                   >
                     通过校园门户授权登录
                   </button>
+                  <div className="mt-4 text-sm text-gray-400 font-medium text-center">
+                  登录即同意同步学籍信息用于社团招新
+                </div>
                 </div>
 
-                <div className="mt-4 text-[14px] text-dark-gray-300 font-medium text-center">
-                登录即同意同步学籍信息用于社团招新
-                </div>
-
-                {/* 底部版权小字 */}
-                <div className="mt-8 text-[10px] font-bold text-grey-300 tracking-widest uppercase">
-                  Meituan University · Student Association
-                </div>
               </motion.div>
             ) : (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col items-center gap-6">
@@ -401,7 +402,7 @@ export default function ClubHubDemo() {
               const status = getApplicationStatus(club.id); // 获取动态状态
               
               return (
-                <motion.div key={club.id} layoutId={`card-${club.id}`} onClick={() => setSelectedClub(club)} className="group relative h-[500px] rounded-[32px] overflow-hidden cursor-pointer bg-white shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+                <motion.div key={club.id} layoutId={`card-${club.id}`} onClick={() => setSelectedClub(club)} className="group relative h-[500px] rounded-[32px] overflow-hidden cursor-pointer bg-white shadow-xl hover:shadow-2xl">
                   <img src={club.heroImage} className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
                   <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
@@ -451,7 +452,7 @@ export default function ClubHubDemo() {
               const status = getApplicationStatus(club.id); // 同样获取动态状态
               
               return (
-                <motion.div key={club.id} layoutId={`card-${club.id}`} onClick={() => setSelectedClub(club)} className="group relative h-[450px] rounded-[32px] overflow-hidden cursor-pointer bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <motion.div key={club.id} layoutId={`card-${club.id}`} onClick={() => setSelectedClub(club)} className="group relative h-[450px] rounded-[32px] overflow-hidden cursor-pointer bg-white shadow-md hover:shadow-xl">
                   <img src={club.heroImage} className="absolute inset-0 w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
                   <div className="absolute inset-0 p-6 flex flex-col justify-end text-white">
@@ -505,7 +506,7 @@ export default function ClubHubDemo() {
               transition={{ duration: 0.6, ease: "easeInOut" }}
               onAnimationComplete={handleAnimationComplete}
             >
-              <motion.div layoutId={`card-${selectedClub.id}`} className="w-full h-[750px] bg-white rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative">
+              <motion.div layoutId={`card-${selectedClub.id}`} suppressHydrationWarning initial={false} className="w-full h-[750px] bg-white rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative">
                 
                 <button onClick={handleCloseModal} className="absolute top-6 right-6 z-[120] p-3 bg-black/20 backdrop-blur-xl text-white rounded-full hover:bg-black/40 transition-colors">
                   <X className="w-5 h-5"/>
@@ -519,25 +520,30 @@ export default function ClubHubDemo() {
                         <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
                       </div>
                       
-                      <div className="px-10 pb-10 flex-1 overflow-y-auto pt-2">
-                        <h2 className="text-4xl font-black tracking-tight mb-8 pr-12">{selectedClub.name}</h2>
-                        
-                        <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 flex justify-around shrink-0">
-                           <DonutChart percent={selectedClub.stats.gender} label="男生占比" colorClass="stroke-blue-400" />
-                           <DonutChart percent={selectedClub.stats.crossMajor} label="跨学科率" colorClass="stroke-purple-400" />
-                           <DonutChart percent={selectedClub.stats.senior} label="高年级同学" colorClass="stroke-yellow-400" />
-                        </div>
+                      {/* 🔥 核心修改：新增刚性容器锁死剩余高度 */}
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        {/* 内容滚动区 */}
+                        <div className="px-10 flex-1 overflow-y-auto pt-2 scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none]">
+                          <h2 className="text-4xl font-black tracking-tight mb-8 pr-12">{selectedClub.name}</h2>
+                          
+                          <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 flex justify-around shrink-0">
+                             <DonutChart percent={selectedClub.stats.gender} label="男生占比" colorClass="stroke-blue-400" />
+                             <DonutChart percent={selectedClub.stats.crossMajor} label="跨学科率" colorClass="stroke-purple-400" />
+                             <DonutChart percent={selectedClub.stats.senior} label="高年级同学" colorClass="stroke-yellow-400" />
+                          </div>
 
-                        <div className="mb-8">
-                          <p className={`text-gray-600 leading-relaxed text-sm font-medium ${!isExpanded ? 'line-clamp-2' : ''}`}>
-                            {selectedClub.detail}
-                          </p>
-                          <button onClick={() => setIsExpanded(!isExpanded)} className="mt-3 text-purple-600 text-xs font-bold flex items-center gap-1 hover:text-purple-800">
-                            {isExpanded ? <><ChevronUp className="w-3 h-3"/> 收起详情</> : <><ChevronDown className="w-3 h-3"/> 展开全部详情</>}
-                          </button>
+                          <div className="mb-8">
+                            <p className={`text-gray-600 leading-relaxed text-sm font-medium ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                              {selectedClub.detail}
+                            </p>
+                            <button onClick={() => setIsExpanded(!isExpanded)} className="mt-3 text-purple-600 text-xs font-bold flex items-center gap-1 hover:text-purple-800">
+                              {isExpanded ? <><ChevronUp className="w-3 h-3"/> 收起详情</> : <><ChevronDown className="w-3 h-3"/> 展开全部详情</>}
+                            </button>
+                          </div>
                         </div>
                         
-                        <div className="pt-4 mt-auto">
+                        {/* 按钮固定区（移出内容区，钉死在底部） */}
+                        <div className="px-10 pb-10 pt-4 shrink-0 w-full">
                           {getApplicationStatus(selectedClub.id) ? (
                             <div className="w-full py-5 bg-gray-100 text-gray-400 rounded-2xl text-center font-bold tracking-widest uppercase">查看信箱了解详情</div>
                           ) : (
@@ -678,11 +684,11 @@ export default function ClubHubDemo() {
         )}
       </AnimatePresence>
 
-      {/* 右下角信箱抽屉入口 (修改红点逻辑) */}
+      {/* 右下角信箱抽屉入口 (修改：美团黄磨砂玻璃 + 去掉呼吸效果) */}
       {step === 3 && (
-        <button onClick={handleDrawerOpen} className="fixed bottom-10 right-10 w-16 h-16 bg-black shadow-2xl rounded-full flex items-center justify-center z-40 hover:scale-105 transition-transform">
-          <Mail className="w-6 h-6 text-white" />
-          {hasUnread && <span className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-black animate-pulse" />}
+        <button onClick={handleDrawerOpen} className="fixed bottom-10 right-10 w-16 h-16 bg-[#FFC107]/80 backdrop-blur-xl shadow-2xl rounded-full flex items-center justify-center z-40 hover:scale-105 transition-transform border border-[#FFC107]/30">
+          <Mail className="w-6 h-6 text-black" />
+          {hasUnread && <span className="absolute top-4 right-4 w-3 h-3 bg-red-500 rounded-full border-2 border-[#FFC107]" />}
         </button>
       )}
 
