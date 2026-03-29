@@ -137,10 +137,10 @@ const ssoUserProfile = {
   college: "经济与贸易学院",
   major: "国际经济与贸易",
   grade: "2024级 本科",
-  birthDate: "2006年04月15日",
+  birthDate: "2006年12月19日",
   gender: "女",
   hometown: "广东省深圳市",
-  studentId: "2024010456"
+  studentId: "2024027852"
 };
 
 export default function ClubHubDemo() {
@@ -304,7 +304,7 @@ export default function ClubHubDemo() {
                 <div className="w-full bg-white/60 backdrop-blur-xl border border-white/50 rounded-[32px] p-10 shadow-2xl flex flex-col items-center">
                   
                   {/* 顶部小 Logo */}
-                  <div className="w-12 h-12 mb-8 rounded-2xl bg-black text-white flex items-center justify-center text-lg font-black shadow-lg tracking-tighter">
+                  <div className="w-12 h-12 mb-8 rounded-2xl bg-[#FFC107] text-black text-black flex items-center justify-center text-lg font-black shadow-lg tracking-tighter">
                     MTU
                   </div>
 
@@ -327,8 +327,12 @@ export default function ClubHubDemo() {
                   </button>
                 </div>
 
+                <div className="mt-4 text-[14px] text-dark-gray-300 font-medium text-center">
+                登录即同意同步学籍信息用于社团招新
+                </div>
+
                 {/* 底部版权小字 */}
-                <div className="mt-8 text-[10px] font-bold text-gray-300 tracking-widest uppercase">
+                <div className="mt-8 text-[10px] font-bold text-grey-300 tracking-widest uppercase">
                   Meituan University · Student Association
                 </div>
               </motion.div>
@@ -521,7 +525,7 @@ export default function ClubHubDemo() {
                         <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 flex justify-around shrink-0">
                            <DonutChart percent={selectedClub.stats.gender} label="男生占比" colorClass="stroke-blue-400" />
                            <DonutChart percent={selectedClub.stats.crossMajor} label="跨学科率" colorClass="stroke-purple-400" />
-                           <DonutChart percent={selectedClub.stats.senior} label="高年级学长" colorClass="stroke-yellow-400" />
+                           <DonutChart percent={selectedClub.stats.senior} label="高年级同学" colorClass="stroke-yellow-400" />
                         </div>
 
                         <div className="mb-8">
