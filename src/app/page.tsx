@@ -492,157 +492,174 @@ export default function ClubHubDemo() {
         </div>
       )}
 
-      {/* 模态框 */}
+      {/* 🔥 核心修复：模态框动画重构 - 双动效兼容版 */}
       <AnimatePresence>
         {selectedClub && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-lg">
-            <motion.div 
+            {/* 1. 外层只做淡入淡出，负责模态框的出现和消失 */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="relative w-full max-w-2xl"
-              animate={{ 
-                y: envelopeState === "sent" ? -1000 : 0, 
-                scale: envelopeState === "sent" ? 0.8 : 1, 
-                opacity: (envelopeState === "sent" || envelopeState === "confirming") ? 0 : 1 
-              }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-              onAnimationComplete={handleAnimationComplete}
             >
-              <motion.div layoutId={`card-${selectedClub.id}`} suppressHydrationWarning initial={false} className="w-full h-[750px] bg-white rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative">
-                
-                <button onClick={handleCloseModal} className="absolute top-6 right-6 z-[120] p-3 bg-black/20 backdrop-blur-xl text-white rounded-full hover:bg-black/40 transition-colors">
-                  <X className="w-5 h-5"/>
-                </button>
-
+              {/* 2. 内层卡片独享 layoutId，同时负责飞行动画 */}
+              <motion.div 
+                layoutId={`card-${selectedClub.id}`}
+                suppressHydrationWarning
+                initial={false}
+                // 🔥 修复点：根据状态直接在这里应用飞行动画
+                animate={envelopeState === "sent" || envelopeState === "confirming" ? { y: -1000, scale: 0.8, opacity: 0 } : { y: 0, scale: 1, opacity: 1 }}
+                transition={envelopeState === "sent" ? { duration: 0.6, ease: "easeInOut" } : { type: "spring", stiffness: 300, damping: 30 }}
+                onAnimationComplete={handleAnimationComplete}
+                className="w-full h-[750px] bg-white rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative"
+              >
+                {/* 3. 内部内容切换 (不再因为 sent 状态而卸载内容) */}
                 <AnimatePresence mode="wait">
-                  {envelopeState === "idle" && (
-                    <motion.div key="details" exit={{ opacity: 0, x: -50 }} className="flex flex-col h-full">
-                      <div className="relative h-64 shrink-0">
-                        <img src={selectedClub.heroImage} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
-                      </div>
-                      
-                      {/* 🔥 核心修改：新增刚性容器锁死剩余高度 */}
-                      <div className="flex flex-col flex-1 overflow-hidden">
-                        {/* 内容滚动区 */}
-                        <div className="px-10 flex-1 overflow-y-auto pt-2 scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none]">
-                          <h2 className="text-4xl font-black tracking-tight mb-8 pr-12">{selectedClub.name}</h2>
+                  {envelopeState !== "confirming" ? (
+                    <motion.div
+                      key="content"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col h-full"
+                    >
+                      <button onClick={envelopeState === "sent" ? undefined : handleCloseModal} className="absolute top-6 right-6 z-[120] p-3 bg-black/20 backdrop-blur-xl text-white rounded-full hover:bg-black/40 transition-colors">
+                        <X className="w-5 h-5"/>
+                      </button>
+
+                      {envelopeState === "idle" && (
+                        <div className="flex flex-col h-full">
+                          <div className="relative h-64 shrink-0">
+                            <img src={selectedClub.heroImage} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+                          </div>
                           
-                          <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 flex justify-around shrink-0">
-                             <DonutChart percent={selectedClub.stats.gender} label="男生占比" colorClass="stroke-blue-400" />
-                             <DonutChart percent={selectedClub.stats.crossMajor} label="跨学科率" colorClass="stroke-purple-400" />
-                             <DonutChart percent={selectedClub.stats.senior} label="高年级同学" colorClass="stroke-yellow-400" />
+                          <div className="flex flex-col flex-1 overflow-hidden">
+                            <div className="px-10 flex-1 overflow-y-auto pt-2 scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none]">
+                              <h2 className="text-4xl font-black tracking-tight mb-8 pr-12">{selectedClub.name}</h2>
+                              
+                              <div className="bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 flex justify-around shrink-0">
+                                 <DonutChart percent={selectedClub.stats.gender} label="男生占比" colorClass="stroke-blue-400" />
+                                 <DonutChart percent={selectedClub.stats.crossMajor} label="跨学科率" colorClass="stroke-purple-400" />
+                                 <DonutChart percent={selectedClub.stats.senior} label="高年级同学" colorClass="stroke-yellow-400" />
+                              </div>
+
+                              <div className="mb-8">
+                                <p className={`text-gray-600 leading-relaxed text-sm font-medium ${!isExpanded ? 'line-clamp-2' : ''}`}>
+                                  {selectedClub.detail}
+                                </p>
+                                <button onClick={() => setIsExpanded(!isExpanded)} className="mt-3 text-purple-600 text-xs font-bold flex items-center gap-1 hover:text-purple-800">
+                                  {isExpanded ? <><ChevronUp className="w-3 h-3"/> 收起详情</> : <><ChevronDown className="w-3 h-3"/> 展开全部详情</>}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div className="px-10 pb-10 pt-4 shrink-0 w-full">
+                              {getApplicationStatus(selectedClub.id) ? (
+                                <div className="w-full py-5 bg-gray-100 text-gray-400 rounded-2xl text-center font-bold tracking-widest uppercase">查看信箱了解详情</div>
+                              ) : (
+                                <button onClick={() => setEnvelopeState("writing")} className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-zinc-800 transition-all shadow-xl flex items-center justify-center gap-2">
+                                  我要申请投递 <ArrowRight className="w-5 h-5"/>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {envelopeState === "writing" && (
+                        <div className="p-10 h-full flex flex-col pt-14">
+                          <h3 className="text-2xl font-black tracking-tight mb-6">起草投递信</h3>
+                          
+                          <label className="block text-sm font-bold text-gray-500 mb-3 tracking-wide">
+                            温小美，其实我们很想听听你想在这里获得什么？
+                          </label>
+                          
+                          <div className="flex-none h-32 bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-4 relative">
+                            <textarea 
+                              value={commitMsg} onChange={(e) => setCommitMsg(e.target.value)}
+                              placeholder={`致 ${selectedClub.name}：\n\n（选填）写下你的想法...`}
+                              className="w-full h-full bg-transparent resize-none outline-none text-gray-800 leading-relaxed placeholder:text-gray-300 font-medium text-sm"
+                            />
+                          </div>
+                          
+                          <button onClick={() => setEnvelopeState("folding")} className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200 mb-6 shrink-0">
+                            折叠信件并预览
+                          </button>
+
+                          <div className="h-px bg-gray-100 w-full mb-6" />
+
+                          <div className="flex-1 overflow-y-auto">
+                            <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+                              <p className="text-[11px] text-amber-800 leading-relaxed">
+                                通过校园 SSO 授权，你的<strong>基本学籍信息</strong>将随此信一同提供给社团审核方，以确保招新流程的高效匹配。
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">姓名</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.name}</div>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">学号</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.studentId}</div>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">学院</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.college}</div>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">年级</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.grade}</div>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">出生日期</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.birthDate}</div>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">籍贯</div>
+                                <div className="text-sm font-bold text-gray-800">{ssoUserProfile.hometown}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {envelopeState === "folding" && (
+                        <div className="h-full flex flex-col items-center justify-center p-12 bg-[#FFFDF9] relative">
+                          <div className="relative w-full max-w-sm aspect-[3/2] bg-white border border-gray-200 shadow-2xl rounded-sm overflow-hidden flex flex-col items-center justify-center mb-8 shrink-0">
+                             <div className="absolute inset-0 opacity-[0.03] bg-[repeating-linear-gradient(45deg,_#000,_#000_1px,_transparent_1px,_transparent_10px)]" />
+                             <div className="text-center space-y-4 relative z-10 pointer-events-none">
+                               <div className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase">Application Letter</div>
+                               <div className="text-2xl font-serif text-gray-800 underline decoration-gray-200 underline-offset-8">To: {selectedClub.name}</div>
+                             </div>
                           </div>
 
-                          <div className="mb-8">
-                            <p className={`text-gray-600 leading-relaxed text-sm font-medium ${!isExpanded ? 'line-clamp-2' : ''}`}>
-                              {selectedClub.detail}
-                            </p>
-                            <button onClick={() => setIsExpanded(!isExpanded)} className="mt-3 text-purple-600 text-xs font-bold flex items-center gap-1 hover:text-purple-800">
-                              {isExpanded ? <><ChevronUp className="w-3 h-3"/> 收起详情</> : <><ChevronDown className="w-3 h-3"/> 展开全部详情</>}
-                            </button>
-                          </div>
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                            onClick={handleStamp}
+                            className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center text-white shadow-xl border-4 border-white ring-4 ring-red-100 mb-6 z-10"
+                          >
+                            <Stamp className="w-8 h-8" />
+                          </motion.button>
+                          
+                          <button onClick={() => setEnvelopeState("writing")} className="flex items-center gap-2 text-[11px] font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-[0.1em] pointer-events-auto z-[100]">
+                            <Undo2 className="w-4 h-4" /> 返回修改文字
+                          </button>
                         </div>
-                        
-                        {/* 按钮固定区（移出内容区，钉死在底部） */}
-                        <div className="px-10 pb-10 pt-4 shrink-0 w-full">
-                          {getApplicationStatus(selectedClub.id) ? (
-                            <div className="w-full py-5 bg-gray-100 text-gray-400 rounded-2xl text-center font-bold tracking-widest uppercase">查看信箱了解详情</div>
-                          ) : (
-                            <button onClick={() => setEnvelopeState("writing")} className="w-full py-5 bg-black text-white rounded-2xl font-bold text-lg hover:bg-zinc-800 transition-all shadow-xl flex items-center justify-center gap-2">
-                              我要申请投递 <ArrowRight className="w-5 h-5"/>
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      )}
+
+                      {/* envelopeState === "sent" 时，内容依然存在于 DOM 中，只是被父级 motion.div 带着飞走了 */}
                     </motion.div>
-                  )}
-
-                  {envelopeState === "writing" && (
-                    <motion.div key="writing" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} className="p-10 h-full flex flex-col pt-14">
-                      <h3 className="text-2xl font-black tracking-tight mb-6">起草投递信</h3>
-                      
-                      <label className="block text-sm font-bold text-gray-500 mb-3 tracking-wide">
-                        温小美，其实我们很想听听你想在这里获得什么？
-                      </label>
-                      
-                      <div className="flex-none h-32 bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-4 relative">
-                        <textarea 
-                          value={commitMsg} onChange={(e) => setCommitMsg(e.target.value)}
-                          placeholder={`致 ${selectedClub.name}：\n\n（选填）写下你的想法...`}
-                          className="w-full h-full bg-transparent resize-none outline-none text-gray-800 leading-relaxed placeholder:text-gray-300 font-medium text-sm"
-                        />
-                      </div>
-                      
-                      <button onClick={() => setEnvelopeState("folding")} className="w-full py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200 mb-6 shrink-0">
-                        折叠信件并预览
-                      </button>
-
-                      <div className="h-px bg-gray-100 w-full mb-6" />
-
-                      <div className="flex-1 overflow-y-auto">
-                        <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
-                          <p className="text-[11px] text-amber-800 leading-relaxed">
-                            通过校园 SSO 授权，你的<strong>基本学籍信息</strong>将随此信一同提供给社团审核方，以确保招新流程的高效匹配。
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">姓名</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.name}</div>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">学号</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.studentId}</div>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">学院</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.college}</div>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">年级</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.grade}</div>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">出生日期</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.birthDate}</div>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">籍贯</div>
-                            <div className="text-sm font-bold text-gray-800">{ssoUserProfile.hometown}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {envelopeState === "folding" && (
-                    <motion.div key="envelope" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="h-full flex flex-col items-center justify-center p-12 bg-[#FFFDF9] relative">
-                      <div className="relative w-full max-w-sm aspect-[3/2] bg-white border border-gray-200 shadow-2xl rounded-sm overflow-hidden flex flex-col items-center justify-center mb-8 shrink-0">
-                         <div className="absolute inset-0 opacity-[0.03] bg-[repeating-linear-gradient(45deg,_#000,_#000_1px,_transparent_1px,_transparent_10px)]" />
-                         <div className="text-center space-y-4 relative z-10 pointer-events-none">
-                           <div className="text-[10px] font-black tracking-[0.3em] text-gray-400 uppercase">Application Letter</div>
-                           <div className="text-2xl font-serif text-gray-800 underline decoration-gray-200 underline-offset-8">To: {selectedClub.name}</div>
-                         </div>
-                      </div>
-
-                      <motion.button 
-                        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                        onClick={handleStamp}
-                        className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center text-white shadow-xl border-4 border-white ring-4 ring-red-100 mb-6 z-10"
-                      >
-                        <Stamp className="w-8 h-8" />
-                      </motion.button>
-                      
-                      <button onClick={() => setEnvelopeState("writing")} className="flex items-center gap-2 text-[11px] font-bold text-gray-400 hover:text-black transition-colors uppercase tracking-[0.1em] pointer-events-auto z-[100]">
-                        <Undo2 className="w-4 h-4" /> 返回修改文字
-                      </button>
-                    </motion.div>
-                  )}
+                  ) : null}
                 </AnimatePresence>
               </motion.div>
             </motion.div>
 
+            {/* 确认提示独立于动画流 */}
             <AnimatePresence>
               {envelopeState === "confirming" && (
                 <motion.div 
