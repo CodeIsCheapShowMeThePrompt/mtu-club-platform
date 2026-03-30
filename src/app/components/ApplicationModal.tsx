@@ -91,7 +91,7 @@ const ModalIdleContent = ({ selectedClub, isExpanded, setIsExpanded, getApplicat
 
           {/* 生产版公众号动态功能 完整保留 */}
           <div className="mb-6">
-            <button onClick={() => setArticleExpanded(!articleExpanded)} className="w-full flex items-center justify-between mb-4 group">
+            <button onClick={() => setArticleExpanded(!articleExpanded)} className="w-full flex items-center justify-between mb-4 py-2 group">
               <h3 className="text-lg font-bold tracking-tight text-gray-900">社团日常 · 最新动态</h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-400 group-hover:text-purple-600 transition-colors">来自公众号自动同步</span>
@@ -127,7 +127,7 @@ const ModalIdleContent = ({ selectedClub, isExpanded, setIsExpanded, getApplicat
 
           {/* 生产版微信群功能 完整保留 */}
           <div className="mb-8">
-            <button onClick={() => setContactExpanded(!contactExpanded)} className="w-full flex items-center justify-between mb-4 group">
+            <button onClick={() => setContactExpanded(!contactExpanded)} className="w-full flex items-center justify-between mb-4 py-2 group">
               <h3 className="text-lg font-bold tracking-tight text-gray-900">招新咨询 · 联系我们</h3>
               {contactExpanded ? <ChevronUp className="w-4 h-4 text-gray-400"/> : <ChevronDown className="w-4 h-4 text-gray-400"/>}
             </button>
@@ -338,11 +338,12 @@ export const ApplicationModal = (props: ApplicationModalProps) => {
         >
           {/* 🔥 原版信封飞出动画+layoutId共享动画 100%还原 */}
           <motion.div 
-            layoutId={`card-${selectedClub.id}`}
             suppressHydrationWarning
             initial={false}
-            animate={envelopeState === "sent" || envelopeState === "confirming" ? { y: -1000, scale: 0.8, opacity: 0 } : { y: 0, scale: 1, opacity: 1 }}
-            transition={envelopeState === "sent" ? { duration: 0.6, ease: "easeInOut" } : { type: "spring", stiffness: 300, damping: 30 }}
+            // 重点：仅在投递/确认时飞走，平时保持静止（无打开动画）
+            animate={envelopeState === "sent" || envelopeState === "confirming" ? { y: -1000, opacity: 0 } : { opacity: 1 }}
+            // 重点：仅保留飞走的动画效果
+            transition={envelopeState === "sent" ? { duration: 0.6, ease: "easeInOut" } : { duration: 0 }}
             onAnimationComplete={handleAnimationComplete}
             className="w-full h-[750px] bg-white rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative"
           >
