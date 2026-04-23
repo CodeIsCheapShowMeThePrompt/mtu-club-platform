@@ -27,12 +27,12 @@
 
 | 校园门户登录 | 三维偏好拨盘 | 社团探索大厅 |
 |:---:|:---:|:---:|
-| ![Login](./docs/screenshots/login.png) | ![Preferences](./docs/screenshots/prefs.png) | ![Explore Hall](./docs/screenshots/explore-hall.png) |
+| <img src="./docs/screenshots/login.png" width="100%"> | <img src="./docs/screenshots/prefs.png" width="100%"> | <img src="./docs/screenshots/explore-hall.png" width="100%"> |
 | 通过校园门户 SSO 授权登录，自动带出学籍信息 | 三维偏好滑动拨盘，Tag 实时联动 | 高匹配度 Top 6 精选 + 全部社团瀑布流 |
 
 | 社团详情（视差背景） | 信封投递（写信→盖章→飞出） | 个人信箱 |
 |:---:|:---:|:---:|
-| ![Club Detail](./docs/screenshots/club-detail.png) | ![Application](./docs/screenshots/application.png) | ![Mailbox](./docs/screenshots/mailbox.png) |
+| <img src="./docs/screenshots/club-detail.png" width="100%"> | <img src="./docs/screenshots/application.png" width="100%"> | <img src="./docs/screenshots/mailbox.png" width="100%"> |
 | 社团画像数据可视化、公众号动态同步、微信群入口 | 拟真信封折叠动画，SSO 学籍信息自动附带 | 回执状态管理、未读红点、信件阅读 |
 
 ---
