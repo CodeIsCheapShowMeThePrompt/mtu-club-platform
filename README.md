@@ -25,10 +25,10 @@
 > # 打开 http://localhost:3000
 > ```
 
-| 登录与气场拨盘 | 智能匹配加载 | 社团探索大厅 |
+| 校园门户登录 | 三维偏好拨盘 | 社团探索大厅 |
 |:---:|:---:|:---:|
-| ![Login & Preferences](./docs/screenshots/login.png) | ![Matching Loader](./docs/screenshots/matching-loader.png) | ![Explore Hall](./docs/screenshots/explore-hall.png) |
-| 三维度偏好滑动拨盘，Tag 实时联动 | 进度条模拟匹配计算，Framer Motion 交互动画 | 高匹配度 Top 6 精选 + 全部社团瀑布流 |
+| ![Login](./docs/screenshots/login.png) | ![Preferences](./docs/screenshots/prefs.png) | ![Explore Hall](./docs/screenshots/explore-hall.png) |
+| 通过校园门户 SSO 授权登录，自动带出学籍信息 | 三维偏好滑动拨盘，Tag 实时联动 | 高匹配度 Top 6 精选 + 全部社团瀑布流 |
 
 | 社团详情（视差背景） | 信封投递（写信→盖章→飞出） | 个人信箱 |
 |:---:|:---:|:---:|
