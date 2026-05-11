@@ -10,12 +10,20 @@
 </p>
 
 > 美团 AI Coding 笔试的产品原型。数据来源为模拟的 20 个社团信息，无真实后端与单点登录（SSO, Single Sign-On）接入。
+>
+> **在线演示：** https://mtu-club-platform.vercel.app
 
 ---
 
 ## 演示
 
-以下截图通过 `npm run dev` 启动本地开发服务器后截取。
+以下截图通过 `npm run dev` 启动本地开发服务器后截取。你可以在项目根目录执行：
+
+```bash
+npm install
+npm run dev
+# 打开 http://localhost:3000
+```
 
 | 校园门户登录 | 三维偏好拨盘 | 社团探索大厅 |
 |:---:|:---:|:---:|
